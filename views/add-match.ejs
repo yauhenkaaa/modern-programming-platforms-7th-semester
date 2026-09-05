@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="container">
+    <a class="text-link" href="/">← Вернуться к матчам</a>
+
+    <h1>Добавить матч</h1>
+
+    <form
+      method="POST"
+      action="/matches"
+      enctype="multipart/form-data"
+      class="match-form"
+    >
+      <label for="homeTeamId">Домашняя команда</label>
+      <select id="homeTeamId" name="homeTeamId" required>
+        <option value="" selected disabled>Выберите команду</option>
+
+        <% teams.forEach((team) => { %>
+          <option value="<%= team.id %>">
+            <%= team.name %> — <%= team.city %>
+          </option>
+        <% }) %>
+      </select>
+
+      <label for="awayTeamId">Гостевая команда</label>
+      <select id="awayTeamId" name="awayTeamId" required>
+        <option value="" selected disabled>Выберите команду</option>
+
+        <% teams.forEach((team) => { %>
+          <option value="<%= team.id %>">
+            <%= team.name %> — <%= team.city %>
+          </option>
+        <% }) %>
+      </select>
+
+      <label for="venueId">Арена</label>
+      <select id="venueId" name="venueId" required>
+        <option value="" selected disabled>Выберите арену</option>
+
+        <% venues.forEach((venue) => { %>
+          <option value="<%= venue.id %>">
+            <%= venue.name %> — <%= venue.city %>
+          </option>
+        <% }) %>
+      </select>
+
+      <label for="dateTime">Дата и время матча</label>
+      <input id="dateTime" name="dateTime" type="datetime-local" required>
+
+      <label for="status">Статус</label>
+      <select id="status" name="status" required>
+        <option value="Запланирован">Запланирован</option>
+        <option value="Идёт">Идёт</option>
+        <option value="Завершён">Завершён</option>
+      </select>
+
+      <label for="homeGoals">Голы домашней команды</label>
+      <input
+        id="homeGoals"
+        name="homeGoals"
+        type="number"
+        min="0"
+        step="1"
+        placeholder="Оставьте пустым для запланированного матча"
+      >
+
+      <label for="awayGoals">Голы гостевой команды</label>
+      <input
+        id="awayGoals"
+        name="awayGoals"
+        type="number"
+        min="0"
+        step="1"
+        placeholder="Оставьте пустым для запланированного матча"
+      >
+
+      <label for="attachment">Файл протокола, афиша или фото</label>
+      <input
+        id="attachment"
+        name="attachment"
+        type="file"
+        accept=".pdf,.jpg,.jpeg,.png,.txt"
+      >
+
+      <button type="submit">Создать матч</button>
+    </form>
+  </main>
+</body>
+</html>
