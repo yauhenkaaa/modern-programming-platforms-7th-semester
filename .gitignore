@@ -53,3 +53,12 @@ Desktop.ini
 
 # Optional local JSON data snapshots
 data/*.local.json
+
+# KHL scouting SPA (server/ + client/)
+# Патерны выше со слэшем внутри привязаны к корню репозитория, поэтому
+# подкаталоги перечислены отдельно.
+server/.env
+server/uploads/*
+!server/uploads/.gitkeep
+client/node_modules/
+client/dist/

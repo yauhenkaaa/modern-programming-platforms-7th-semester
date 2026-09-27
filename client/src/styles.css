@@ -1,0 +1,31 @@
+html, body, button, input, select, textarea { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; }
+body { margin: 0; font-size: 16px; line-height: 1.4; background: #f4f5f7; color: #1c1c1c; }
+a { color: #9d1028; }
+header { display: flex; gap: 16px; align-items: center; padding: 12px 20px; background: #1c1c1c; }
+header a { color: #ddd; text-decoration: none; }
+header a.active { color: #fff; font-weight: 700; }
+main { max-width: 1100px; margin: 0 auto; padding: 16px; }
+form, article, table { background: #fff; border-radius: 8px; }
+form, article { padding: 12px; margin-bottom: 12px; }
+label { display: grid; gap: 4px; font-size: 13px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 6px 8px; border-bottom: 1px solid #eee; text-align: left; font-size: 14px; }
+button, .button { background: #9d1028; color: #fff; border: 0; border-radius: 6px; padding: 8px 12px; cursor: pointer; text-decoration: none; }
+.ghost { background: #ddd; color: #222; }
+.error { color: #9d1028; }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.leaders { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; }
+.suggest { position: relative; }
+.suggest ul { position: absolute; z-index: 2; background: #fff; margin: 0; padding: 0; list-style: none; border: 1px solid #ddd; width: 100%; }
+.suggest li { padding: 6px; cursor: pointer; }
+fieldset { border: 1px solid #e6e6e8; border-radius: 8px; margin: 0 0 12px; }
+legend, h2 { font-weight: 700; }
+legend { padding: 0 6px; }
+h2 { margin: 16px 0 8px; font-size: 16px; }
+.facts, .grades { display: flex; flex-wrap: wrap; gap: 8px; }
+.facts div, .grades span { background: #f4f5f7; border-radius: 6px; padding: 8px 10px; }
+.facts span { display: block; color: #666; font-size: 12px; }
+.meta { color: #444; margin: 4px 0; }
+.club-block { border-width: 0 8px; border-style: solid; border-color: #8a8f94; border-radius: 10px; padding: 16px; margin-bottom: 16px; background: #fff; }
+textarea { width: 100%; min-height: 64px; box-sizing: border-box; }

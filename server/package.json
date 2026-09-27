@@ -1,0 +1,22 @@
+{
+  "name": "khl-scouting-server",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "migrate": "node src/db.js",
+    "seed": "node scripts/seed.js",
+    "seed:verify": "node scripts/seed.js --verify"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "multer": "^2.3.0",
+    "pg": "^8.16.3"
+  },
+  "engines": { "node": ">=20" },
+  "license": "ISC"
+}

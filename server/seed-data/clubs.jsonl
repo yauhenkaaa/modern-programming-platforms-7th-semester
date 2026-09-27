@@ -1,0 +1,22 @@
+{"id":1,"name":"Динамо Минск","city":"Минск","logo":"logos/dinamo-minsk.svg","arena":"Минск-Арена","bio":"Динамо Минск, Минск.","division":"Тарасова","conference":"Запад"}
+{"id":2,"name":"Авангард","city":"Омск","logo":"logos/avangard.svg","arena":"G-Drive Арена","bio":"Авангард, Омск.","division":"Чернышёва","conference":"Восток"}
+{"id":3,"name":"Металлург Магнитогорск","city":"Магнитогорск","logo":"logos/metallurg.svg","arena":"Арена «Металлург»","bio":"Металлург Магнитогорск, Магнитогорск.","division":"Харламова","conference":"Восток"}
+{"id":4,"name":"Трактор","city":"Челябинск","logo":"logos/traktor.svg","arena":"Ледовая арена «Трактор»","bio":"Трактор, Челябинск.","division":"Харламова","conference":"Восток"}
+{"id":5,"name":"ЦСКА","city":"Москва","logo":"logos/cska.svg","arena":"ЦСКА Арена","bio":"ЦСКА, Москва.","division":"Тарасова","conference":"Запад"}
+{"id":6,"name":"Автомобилист","city":"Екатеринбург","logo":"logos/avtomobilist.svg","arena":"УГМК Арена","bio":"Автомобилист, Екатеринбург.","division":"Харламова","conference":"Восток"}
+{"id":7,"name":"Динамо Москва","city":"Москва","logo":"logos/dynamo-moscow.svg","arena":"ВТБ Арена","bio":"Динамо Москва, Москва.","division":"Боброва","conference":"Запад"}
+{"id":8,"name":"Ак Барс","city":"Казань","logo":"logos/ak-bars.svg","arena":"Татнефть Арена","bio":"Ак Барс, Казань.","division":"Харламова","conference":"Восток"}
+{"id":9,"name":"Локомотив","city":"Ярославль","logo":"logos/lokomotiv.svg","arena":"Арена 2000","bio":"Локомотив, Ярославль.","division":"Тарасова","conference":"Запад"}
+{"id":10,"name":"Торпедо","city":"Нижний Новгород","logo":"logos/torpedo.svg","arena":"КРК «Нагорный»","bio":"Торпедо, Нижний Новгород.","division":"Тарасова","conference":"Запад"}
+{"id":11,"name":"Северсталь","city":"Череповец","logo":"logos/severstal.svg","arena":"Ледовый дворец","bio":"Северсталь, Череповец.","division":"Тарасова","conference":"Запад"}
+{"id":12,"name":"Нефтехимик","city":"Нижнекамск","logo":"logos/neftekhimik.svg","arena":"Нефтехим Арена","bio":"Нефтехимик, Нижнекамск.","division":"Харламова","conference":"Восток"}
+{"id":13,"name":"Спартак","city":"Москва","logo":"logos/spartak.svg","arena":"Дворец спорта «Мегаспорт»","bio":"Спартак, Москва.","division":"Боброва","conference":"Запад"}
+{"id":14,"name":"Адмирал","city":"Владивосток","logo":"logos/admiral.svg","arena":"Арена «Фетисов»","bio":"Адмирал, Владивосток.","division":"Чернышёва","conference":"Восток"}
+{"id":15,"name":"Шанхай Драгонс","city":"Шанхай","logo":"logos/shanghai-dragons.svg","arena":"Международный ледовый центр «Фэйда»","bio":"Шанхай Драгонс, Шанхай.","division":"Боброва","conference":"Запад"}
+{"id":16,"name":"Лада","city":"Тольятти","logo":"logos/lada.svg","arena":"Лада-Арена","bio":"Лада, Тольятти.","division":"Чернышёва","conference":"Восток"}
+{"id":17,"name":"Салават Юлаев","city":"Уфа","logo":"logos/salavat-yulaev.svg","arena":"Уфа-Арена","bio":"Салават Юлаев, Уфа.","division":"Чернышёва","conference":"Восток"}
+{"id":18,"name":"СКА","city":"Санкт-Петербург","logo":"logos/ska.svg","arena":"СКА Арена","bio":"СКА, Санкт-Петербург.","division":"Боброва","conference":"Запад"}
+{"id":19,"name":"Барыс","city":"Астана","logo":"logos/barys.svg","arena":"Барыс Арена","bio":"Барыс, Астана.","division":"Чернышёва","conference":"Восток"}
+{"id":20,"name":"Сибирь","city":"Новосибирск","logo":"logos/sibir.svg","arena":"Сибирь-Арена","bio":"Сибирь, Новосибирск.","division":"Чернышёва","conference":"Восток"}
+{"id":21,"name":"ХК Сочи","city":"Сочи","logo":"logos/sochi.svg","arena":"Ледовый дворец «Большой»","bio":"ХК Сочи, Сочи.","division":"Боброва","conference":"Запад"}
+{"id":22,"name":"Амур","city":"Хабаровск","logo":"logos/amur.svg","arena":"Платинум Арена","bio":"Амур, Хабаровск.","division":"Чернышёва","conference":"Восток"}

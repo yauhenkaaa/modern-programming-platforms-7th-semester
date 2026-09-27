@@ -1,12 +1,16 @@
-const express = require('express');
+/* Используется для развёртывания веб-сервера, обрабатывающего запросы от браузера, 
+формирования страниц на сервере и передачи готовых страниц клиенту*/
+const express = require('express'); 
 const path = require('path');
 const multer = require('multer');
 
+// Задаём используемые константы в качестве начальных данных при запуске (вообще нужен коннектор к базе данных)
 const { teams, venues, matches } = require('./data/protocol-data');
 
-const app = express();
+const app = express(); // По сути экземпляр сайта
 const PORT = 3000;
 
+// Задаём EJS в качестве движка формирования HTML-страниц, указываем, откуда брать формы для создания страниц
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
@@ -46,7 +50,7 @@ function parseGoals(value) {
 }
 
 function isValidStatus(status) {
-  return ['Ожидается', 'Идёт 1-ый период', "Первый перерыв", 'Идёт 2-ой период', "Второй перерыв", 'Идёт 3-й период', 'Завершён', "Отменён"].includes(status);
+  return ['Ожидается', 'Подготовка к матчу', 'Идёт 1-ый период', "Первый перерыв", 'Идёт 2-ой период', "Второй перерыв", 'Идёт 3-й период', 'Завершён', 'Овертайм', "Буллиты", "Отменён"].includes(status);
 }
 
 app.post('/matches', upload.single('attachment'), (req, res) => {

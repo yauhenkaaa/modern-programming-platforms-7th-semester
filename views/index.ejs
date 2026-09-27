@@ -26,20 +26,61 @@
           Все матчи
         </option>
 
-        <option value="Запланирован"
-          <%= selectedStatus === 'Запланирован' ? 'selected' : '' %>>
-          Запланирован
+        <option value="Ожидается"
+          <%= selectedStatus === 'Ожидается' ? 'selected' : '' %>>
+          Ожидается
         </option>
 
-        <option value="Идёт"
-          <%= selectedStatus === 'Идёт' ? 'selected' : '' %>>
-          Идёт
+        <option value="Подготовка к матчу"
+          <%= selectedStatus === 'Подготовка к матчу' ? 'selected' : '' %>>
+          Подготовка к матчу
+        </option>
+
+        <option value="Идёт 1-ый период"
+          <%= selectedStatus === 'Идёт 1-ый период' ? 'selected' : '' %>>
+          Идёт 1-ый период
+        </option>
+
+        <option value="Первый перерыв"
+          <%= selectedStatus === 'Первый перерыв' ? 'selected' : '' %>>
+          Первый перерыв
+        </option>
+
+        <option value="Идёт 2-ой период"
+          <%= selectedStatus === 'Идёт 2-ой период' ? 'selected' : '' %>>
+          Идёт 2-ой период
+        </option>
+
+        <option value="Второй перерыв"
+          <%= selectedStatus === 'Второй перерыв' ? 'selected' : '' %>>
+          Второй перерыв
+        </option>
+
+        <option value="Идёт 3-й период"
+          <%= selectedStatus === 'Идёт 3-й период' ? 'selected' : '' %>>
+          Идёт 3-й период
         </option>
 
         <option value="Завершён"
           <%= selectedStatus === 'Завершён' ? 'selected' : '' %>>
           Завершён
         </option>
+
+        <option value="Овертайм"
+          <%= selectedStatus === 'Овертайм' ? 'selected' : '' %>>
+          Овертайм
+        </option>
+
+        <option value="Буллиты"
+          <%= selectedStatus === 'Буллиты' ? 'selected' : '' %>>
+          Буллиты
+        </option>
+
+        <option value="Отменён"
+          <%= selectedStatus === 'Отменён' ? 'selected' : '' %>>
+          Отменён
+        </option>
+
       </select>
 
       <button type="submit">Показать</button>
