@@ -18,6 +18,10 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       PORT: 3001
       CLIENT_ORIGIN: http://localhost:8080
+      PUBLIC_ORIGIN: http://localhost:8080
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
+      MAIL_FROM: scouting@local.test
       UPLOAD_DIR: /data/uploads
       RUN_SEED: ${RUN_SEED:-true}
       NODE_ENV: production
@@ -26,6 +30,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      mailpit:
+        condition: service_started
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 5s
@@ -38,6 +44,10 @@ services:
     depends_on:
       server:
         condition: service_healthy
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "8025:8025"
 volumes:
   pgdata:
   uploads:

@@ -148,9 +148,47 @@ CREATE TABLE all_time_stats (
   CHECK (jsonb_typeof(extra_stats) = 'object')
 );
 
+CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
+  email TEXT NOT NULL UNIQUE CHECK (
+    email = lower(email)
+    AND email ~ '^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$'
+    AND length(email) <= 200
+  ),
+  password_hash TEXT NOT NULL CHECK (length(password_hash) BETWEEN 20 AND 200),
+  role TEXT NOT NULL CHECK (role IN ('viewer', 'scout', 'admin')),
+  failed_login_count INTEGER NOT NULL DEFAULT 0 CHECK (failed_login_count >= 0),
+  locked_until TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE sessions (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  token_hash CHAR(64) NOT NULL UNIQUE CHECK (token_hash ~ '^[0-9a-f]{64}$'),
+  expires_at TIMESTAMPTZ NOT NULL,
+  last_seen_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  ip TEXT CHECK (ip IS NULL OR length(ip) <= 64),
+  user_agent TEXT CHECK (user_agent IS NULL OR length(user_agent) <= 300),
+  revoked_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CHECK (expires_at > created_at)
+);
+
+CREATE TABLE password_resets (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  token_hash CHAR(64) NOT NULL UNIQUE CHECK (token_hash ~ '^[0-9a-f]{64}$'),
+  expires_at TIMESTAMPTZ NOT NULL,
+  used_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CHECK (expires_at > created_at)
+);
+
 CREATE TABLE reports (
   id SERIAL PRIMARY KEY,
   player_id INTEGER NOT NULL REFERENCES players (id) ON DELETE CASCADE,
+  author_id INTEGER REFERENCES users (id) ON DELETE SET NULL,
   scout_name TEXT NOT NULL CHECK (btrim(scout_name) <> '' AND length(scout_name) <= 120),
   report_date DATE NOT NULL CHECK (report_date BETWEEN DATE '2008-09-01' AND DATE '2100-01-01'),
   matches_observed SMALLINT NOT NULL CHECK (matches_observed >= 3),
@@ -193,6 +231,9 @@ CREATE INDEX players_current_club_id_idx ON players (current_club_id);
 CREATE INDEX players_position_idx ON players (position);
 CREATE INDEX players_name_trgm_idx ON players USING gin (lower(surname || ' ' || name) gin_trgm_ops);
 CREATE INDEX reports_player_id_idx ON reports (player_id);
+CREATE INDEX reports_author_id_idx ON reports (author_id);
+CREATE INDEX sessions_user_active_idx ON sessions (user_id) WHERE revoked_at IS NULL;
+CREATE INDEX password_resets_user_idx ON password_resets (user_id);
 CREATE INDEX reports_overall_grade_idx ON reports (overall_grade);
 CREATE INDEX reports_report_date_idx ON reports (report_date DESC, id DESC);
 CREATE INDEX css_season_points_idx ON current_season_stats (season_id, points);

@@ -3,6 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const db = require('../src/db');
+const auth = require('../src/auth');
 
 const dir = path.join(__dirname, '..', 'seed-data');
 
@@ -29,6 +30,7 @@ async function verify() {
       (SELECT COUNT(*)::int FROM players) AS players,
       (SELECT COUNT(*)::int FROM clubs) AS clubs,
       (SELECT COUNT(*)::int FROM reports) AS reports,
+      (SELECT COUNT(*)::int FROM users) AS users,
       (SELECT COUNT(*)::int FROM reports WHERE document_path IS NOT NULL) AS with_document,
       (SELECT COUNT(*)::int FROM players p WHERE NOT EXISTS (
         SELECT 1 FROM current_season_stats s WHERE s.player_id = p.id)) AS missing_current,
@@ -36,7 +38,7 @@ async function verify() {
         SELECT COUNT(*) FROM all_time_stats s WHERE s.player_id = p.id) < 2) AS short_history`);
   const summary = rows[0];
   process.stdout.write(JSON.stringify(summary) + '\n');
-  if (summary.players < 100 || summary.clubs < 22 || summary.reports < 25 || summary.missing_current || summary.short_history) {
+  if (summary.players < 100 || summary.clubs < 22 || summary.reports < 25 || summary.users < 3 || summary.missing_current || summary.short_history) {
     throw new Error('Сид не проходит проверку');
   }
 }
@@ -58,7 +60,7 @@ async function main() {
   }
   await db.tx(async (client) => {
     if (process.argv.includes('--truncate')) {
-      await client.query('TRUNCATE reports, all_time_stats, current_season_stats, players, seasons, clubs, nations RESTART IDENTITY CASCADE');
+      await client.query('TRUNCATE password_resets, sessions, reports, all_time_stats, current_season_stats, players, seasons, clubs, nations, users RESTART IDENTITY CASCADE');
     }
     await upsert(client, 'nations', rows('nations.jsonl'));
     await upsert(client, 'clubs', rows('clubs.jsonl'));
@@ -67,6 +69,18 @@ async function main() {
     await upsert(client, 'current_season_stats', rows('current.jsonl'));
     await upsert(client, 'all_time_stats', rows('history.jsonl'));
     await upsert(client, 'reports', reports);
+    for (const [email, password, role] of [
+      ['viewer@local.test', 'viewer', 'viewer'],
+      ['scout@local.test', 'scout', 'scout'],
+      ['admin@local.test', 'admin', 'admin']
+    ]) {
+      await client.query(
+        `INSERT INTO users (email, password_hash, role) VALUES ($1, $2, $3)
+         ON CONFLICT (email) DO UPDATE SET password_hash = EXCLUDED.password_hash, role = EXCLUDED.role,
+           failed_login_count = 0, locked_until = NULL`,
+        [email, auth.hashPassword(password), role]
+      );
+    }
   });
   await verify();
 }

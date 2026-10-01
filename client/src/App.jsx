@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, NavLink, Navigate, Route, Routes, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, NavLink, Navigate, Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { api, qs } from './api.js';
 
 const FILTER_GROUPS = [
@@ -45,6 +45,20 @@ const CLUB_COLORS = {
 };
 function clubColor(name) { return CLUB_COLORS[name] || '#8a8f94'; }
 
+function readUser() {
+  try { return JSON.parse(sessionStorage.getItem('user') || 'null'); } catch { return null; }
+}
+
+function canCreate(user) {
+  return Boolean(user && (user.role === 'scout' || user.role === 'admin'));
+}
+
+function canMutate(user, authorId) {
+  if (!user) return false;
+  if (user.role === 'admin') return true;
+  return user.role === 'scout' && authorId != null && authorId === user.id;
+}
+
 function options(dictionaries, key) {
   if (!dictionaries) return null;
   if (key === 'nationId') return dictionaries.nations.map((item) => [item.id, item.name]);
@@ -57,16 +71,38 @@ function options(dictionaries, key) {
 }
 
 function Layout() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const user = readUser();
+  const path = location.pathname;
+  const publicPage = path === '/login' || path === '/forgot' || path === '/reset';
+  async function logout() {
+    try { await api('/api/auth/logout', { method: 'POST' }); } catch { /* ключ уже отозван */ }
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
+    navigate('/login');
+  }
+  if (!user && !publicPage) return <Navigate to="/login" replace />;
+  if (user && (path === '/login' || path === '/forgot')) return <Navigate to="/reports" replace />;
   return (
     <>
       <header>
         <strong>Скаутинг КХЛ</strong>
-        <NavLink to="/reports" end>Отчёты</NavLink>
-        <NavLink to="/reports/new">Новый отчёт</NavLink>
+        {user && <>
+          <NavLink to="/reports" end>Отчёты</NavLink>
+          {canCreate(user) && <NavLink to="/reports/new">Новый отчёт</NavLink>}
+          <NavLink to="/sessions">Сессии</NavLink>
+          <span className="who">{user.email} · {user.role}</span>
+          <button type="button" onClick={logout}>Выход</button>
+        </>}
       </header>
       <main>
       <Routes>
           <Route path="/" element={<Navigate to="/reports" replace />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/forgot" element={<ForgotPage />} />
+          <Route path="/reset" element={<ResetPage />} />
+          <Route path="/sessions" element={<SessionsPage />} />
           <Route path="/reports" element={<ReportsPage />} />
           <Route path="/reports/new" element={<ReportForm />} />
           <Route path="/reports/:id/edit" element={<ReportForm />} />
@@ -75,6 +111,126 @@ function Layout() {
           <Route path="*" element={<p>Страница не найдена</p>} />
       </Routes>
       </main>
+    </>
+  );
+}
+
+function LoginPage() {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  async function submit(event) {
+    event.preventDefault();
+    setError('');
+    try {
+      const data = await api('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      sessionStorage.setItem('token', data.token);
+      sessionStorage.setItem('user', JSON.stringify({ id: data.id, email: data.email, role: data.role }));
+      navigate('/reports');
+    } catch (err) { setError(err.message); }
+  }
+  return (
+    <form onSubmit={submit}>
+      <h1>Вход</h1>
+      {error && <p className="error">{error}</p>}
+      <label>Почта<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required /></label>
+      <label>Пароль<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label>
+      <p className="row"><button type="submit">Войти</button><Link to="/forgot">Забыли пароль</Link></p>
+      <p className="meta">viewer@local.test / viewer · scout@local.test / scout · admin@local.test / admin</p>
+    </form>
+  );
+}
+
+function ForgotPage() {
+  const [email, setEmail] = useState('');
+  const [error, setError] = useState('');
+  const [sent, setSent] = useState(false);
+  async function submit(event) {
+    event.preventDefault();
+    setError('');
+    try {
+      await api('/api/auth/forgot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      setSent(true);
+    } catch (err) { setError(err.message); }
+  }
+  return (
+    <form onSubmit={submit}>
+      <h1>Восстановление доступа</h1>
+      {error && <p className="error">{error}</p>}
+      {sent ? <p>Если адрес зарегистрирован, письмо отправлено. Ящик: http://localhost:8025</p> : (
+        <>
+          <label>Почта<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required /></label>
+          <p><button type="submit">Отправить ссылку</button></p>
+        </>
+      )}
+      <p><Link to="/login">Ко входу</Link></p>
+    </form>
+  );
+}
+
+function ResetPage() {
+  const [params] = useSearchParams();
+  const navigate = useNavigate();
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  async function submit(event) {
+    event.preventDefault();
+    setError('');
+    try {
+      await api('/api/auth/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: params.get('token') || '', password })
+      });
+      navigate('/login');
+    } catch (err) { setError(err.message); }
+  }
+  return (
+    <form onSubmit={submit}>
+      <h1>Новый пароль</h1>
+      {error && <p className="error">{error}</p>}
+      <label>Пароль<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} required minLength={4} /></label>
+      <p><button type="submit">Сохранить</button></p>
+    </form>
+  );
+}
+
+function SessionsPage() {
+  const [items, setItems] = useState(null);
+  const [error, setError] = useState('');
+  function load() {
+    return api('/api/auth/sessions').then((value) => setItems(value.items)).catch((err) => setError(err.message));
+  }
+  useEffect(() => { load(); }, []);
+  async function revoke(id) {
+    setError('');
+    try {
+      await api('/api/auth/sessions/' + id, { method: 'DELETE' });
+      await load();
+    } catch (err) { setError(err.message); }
+  }
+  return (
+    <>
+      <h1>Активные подключения</h1>
+      {error && <p className="error">{error}</p>}
+      {!items && !error && <p>Загрузка…</p>}
+      {items && items.length === 0 && <p>Активных сессий нет</p>}
+      {items && items.map((item) => (
+        <article key={item.id}>
+          <p><strong>{item.email}</strong> · {item.role}{item.current ? ' · текущая' : ''}</p>
+          <p className="meta">{item.ip || 'без адреса'} · до {item.expiresAt}</p>
+          <button type="button" onClick={() => revoke(item.id)}>Отозвать</button>
+        </article>
+      ))}
     </>
   );
 }
@@ -239,8 +395,10 @@ function ReportPage() {
       <h2>Документ</h2>
       <p>{report.document ? <a href={report.document.url}>{report.document.originalName}</a> : 'Документ не приложен'}</p>
       <p className="row">
-        <Link className="button" to={'/reports/' + id + '/edit'}>Изменить</Link>
-        <button type="button" onClick={remove}>Удалить</button>
+        {canMutate(readUser(), report.authorId) && <>
+          <Link className="button" to={'/reports/' + id + '/edit'}>Изменить</Link>
+          <button type="button" onClick={remove}>Удалить</button>
+        </>}
       </p>
     </article>
   );
@@ -258,13 +416,15 @@ function ReportForm() {
   const [hasDoc, setHasDoc] = useState(false);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
+  const [authorId, setAuthorId] = useState(undefined);
+  const user = readUser();
   useEffect(() => {
     if (!id) return;
     api('/api/reports/' + id).then((report) => {
       const next = { ...EMPTY };
       for (const key of Object.keys(EMPTY)) next[key] = report[key] ?? '';
       next.playerId = String(report.playerId);
-      setFields(next); setInitial(next); setPlayerLabel(report.player.fullName); setHasDoc(Boolean(report.document));
+      setFields(next); setInitial(next); setPlayerLabel(report.player.fullName); setHasDoc(Boolean(report.document)); setAuthorId(report.authorId ?? null);
     }).catch((err) => setError(err.message));
   }, [id]);
   useEffect(() => {
@@ -292,6 +452,8 @@ function ReportForm() {
       setFieldErrors(Object.fromEntries((err.details || []).map((item) => [item.field, item.message])));
     }
   }
+  if (!id && !canCreate(user)) return <p className="error">Недостаточно прав</p>;
+  if (id && authorId !== undefined && !canMutate(user, authorId)) return <p className="error">Недостаточно прав</p>;
   return (
     <form onSubmit={submit}>
       <h1>{id ? 'Правка отчёта' : 'Новый отчёт'}</h1>

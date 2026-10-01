@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { Pool, types } = require('pg');
+const log = require('./log');
 
 types.setTypeParser(1082, (value) => value);
 types.setTypeParser(1700, (value) => (value === null ? null : Number(value)));
@@ -54,6 +55,15 @@ const config = {
   maxUploadMb: readInt('MAX_UPLOAD_MB', 10, 1, 100),
   isProduction: (readString('NODE_ENV') || 'development') === 'production',
   slowMs: readInt('DB_SLOW_QUERY_MS', 200, 1, 60000),
+  sessionTtlMin: readInt('SESSION_TTL_MIN', 120, 5, 1440),
+  resetTtlMin: readInt('RESET_TTL_MIN', 20, 5, 1440),
+  loginMaxFails: readInt('LOGIN_MAX_FAILS', 5, 1, 20),
+  loginLockMin: readInt('LOGIN_LOCK_MIN', 15, 1, 1440),
+  maxSessions: readInt('MAX_SESSIONS', 3, 1, 20),
+  smtpHost: readString('SMTP_HOST'),
+  smtpPort: readInt('SMTP_PORT', 1025, 1, 65535),
+  mailFrom: readString('MAIL_FROM') || 'scouting@local.test',
+  publicOrigin: readString('PUBLIC_ORIGIN') || readString('CLIENT_ORIGIN') || 'http://localhost:8080',
   database
 };
 config.maxUploadBytes = config.maxUploadMb * 1024 * 1024;
@@ -87,7 +97,7 @@ async function query(text, params) {
   const started = Date.now();
   const result = await pool.query(text, params);
   const ms = Date.now() - started;
-  if (ms >= config.slowMs) process.stderr.write('[sql] ' + ms + 'ms ' + text.replace(/\s+/g, ' ').slice(0, 160) + '\n');
+  if (ms >= config.slowMs) log.warn('slow sql', { ms, sql: text.replace(/\s+/g, ' ').slice(0, 160) });
   return result;
 }
 

@@ -1,9 +1,12 @@
 'use strict';
 
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const { config, query, pool, HttpError } = require('./db');
+const log = require('./log');
+const auth = require('./auth');
 const reports = require('./reports');
 const players = require('./players');
 
@@ -27,6 +30,7 @@ function rateLimit(req, res, next) {
 function createApp() {
   fs.mkdirSync(config.uploadDir, { recursive: true });
   const app = express();
+  app.set('trust proxy', 1);
   app.disable('x-powered-by');
   app.use((req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -37,14 +41,25 @@ function createApp() {
   });
   app.use((req, res, next) => {
     const started = Date.now();
-    res.on('finish', () => process.stdout.write(req.method + ' ' + req.path + ' ' + res.statusCode + ' ' + (Date.now() - started) + 'ms\n'));
+    req.id = crypto.randomUUID();
+    res.setHeader('X-Request-Id', req.id);
+    const pathName = req.path;
+    const method = req.method;
+    res.on('finish', () => log.info('request', {
+      reqId: req.id,
+      method,
+      path: pathName,
+      status: res.statusCode,
+      ms: Date.now() - started,
+      userId: req.user ? req.user.id : undefined
+    }));
     next();
   });
   app.use(rateLimit);
   app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', config.origin);
     res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
     if (req.method === 'OPTIONS') return res.status(204).end();
     next();
   });
@@ -61,16 +76,26 @@ function createApp() {
     try { await query('SELECT 1'); database = 'up'; } catch { database = 'down'; }
     res.json({ status: database === 'up' ? 'ok' : 'degraded', version: '1.0.0', database });
   });
-  app.use('/api/reports', reports.router);
-  app.use('/api/players', players.router);
-  app.get('/api/dictionaries', players.dictionaries);
+  app.use('/api/auth', auth.router);
+  app.use('/api/reports', auth.requireAuth, reports.router);
+  app.use('/api/players', auth.requireAuth, players.router);
+  app.get('/api/dictionaries', auth.requireAuth, players.dictionaries);
   app.use((_req, res) => fail(res, 404, 'NOT_FOUND', 'Ресурс не найден', []));
-  app.use((err, _req, res, _next) => {
+  app.use((err, req, res, _next) => {
     if (res.headersSent) return;
-    if (err instanceof HttpError) return fail(res, err.status, err.code, err.message, err.details);
+    if (err instanceof HttpError) {
+      if (err.retryAfter) res.setHeader('Retry-After', String(err.retryAfter));
+      return fail(res, err.status, err.code, err.message, err.details);
+    }
     if (err && err.type === 'entity.too.large') return fail(res, 413, 'PAYLOAD_TOO_LARGE', 'Тело запроса слишком большое', []);
     if (err instanceof SyntaxError && err.status === 400) return fail(res, 400, 'BAD_REQUEST', 'Некорректный JSON', []);
-    process.stderr.write('[error] ' + (err && err.stack ? err.stack : err) + '\n');
+    log.error('request failed', {
+      reqId: req.id,
+      method: req.method,
+      path: req.path,
+      code: err && err.code,
+      message: err && err.message
+    });
     if (err && err.code === '23514') return fail(res, 400, 'BAD_REQUEST', 'Данные не прошли проверку', []);
     if (err && err.code === '23503') return fail(res, 422, 'UNPROCESSABLE_ENTITY', 'Ссылка на несуществующую запись', []);
     if (err && err.code === '23505') return fail(res, 409, 'CONFLICT', 'Конфликт уникальности', []);
@@ -80,7 +105,7 @@ function createApp() {
 }
 
 if (require.main === module) {
-  const server = createApp().listen(config.port, () => process.stdout.write('API на порту ' + config.port + '\n'));
+  const server = createApp().listen(config.port, () => log.info('listening', { port: config.port }));
   function shutdown() {
     server.close(() => pool.end().finally(() => process.exit(0)));
     setTimeout(() => process.exit(1), 5000).unref();

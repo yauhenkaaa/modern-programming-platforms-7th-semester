@@ -6,6 +6,8 @@ const crypto = require('crypto');
 const express = require('express');
 const multer = require('multer');
 const { config, query, tx, http } = require('./db');
+const log = require('./log');
+const auth = require('./auth');
 const players = require('./players');
 
 const GRADES = ['skating', 'shooting', 'passing', 'hockeyIq', 'physicality', 'defensivePlay', 'discipline', 'potential'];
@@ -197,7 +199,7 @@ const REPORT_SQL = `
   SELECT r.id AS r_id, r.player_id, r.scout_name, r.report_date, r.matches_observed, r.observed_matches,
     r.skating, r.shooting, r.passing, r.hockey_iq, r.physicality, r.defensive_play, r.discipline, r.potential,
     r.overall_grade, r.recommendation, r.projection, r.strengths, r.weaknesses, r.summary,
-    r.document_path, r.document_original_name, r.document_mime, r.document_size_bytes, r.created_at, r.updated_at,
+    r.document_path, r.document_original_name, r.document_mime, r.document_size_bytes, r.author_id, r.created_at, r.updated_at,
     p.id AS p_id, p.name AS p_name, p.patronymic AS p_patronymic, p.surname AS p_surname, p.dob AS p_dob,
     date_part('year', age(p.dob))::int AS p_age, p.position AS p_position, p.hand AS p_hand,
     p.jersey_number AS p_jersey_number, p.height_cm AS p_height_cm, p.weight_kg AS p_weight_kg,
@@ -220,7 +222,7 @@ function mapReport(row, current, history) {
       url: '/uploads/' + row.document_path, originalName: row.document_original_name,
       mime: row.document_mime, sizeBytes: row.document_size_bytes
     } : null,
-    createdAt: row.created_at, updatedAt: row.updated_at,
+    authorId: row.author_id, createdAt: row.created_at, updatedAt: row.updated_at,
     player: players.mapPlayer(row, current, history)
   };
 }
@@ -284,7 +286,7 @@ function acceptFile(req, res, next) {
 async function unlinkStored(filename) {
   if (!filename || path.basename(filename) !== filename) return;
   await fs.promises.unlink(path.join(config.uploadDir, filename)).catch((error) => {
-    if (error.code !== 'ENOENT') process.stderr.write('[upload] ' + error.message + '\n');
+    if (error.code !== 'ENOENT') log.warn('upload unlink failed', { message: error.message });
   });
 }
 
@@ -387,14 +389,16 @@ router.get('/:id', async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
-router.post('/', acceptFile, async (req, res, next) => {
+router.post('/', auth.requireRole('scout', 'admin'), acceptFile, async (req, res, next) => {
   let stored = false;
   try {
     const { value } = parseBody(req.body, 'create');
     if (!(await players.playerExists(value.playerId))) {
       throw http(422, 'UNPROCESSABLE_ENTITY', 'Игрок не найден', [detail('playerId', 'Игрок не существует')]);
     }
-    const id = await save(null, toRow(value, req.file, true), req.file);
+    const row = toRow(value, req.file, true);
+    row.author_id = req.user.id;
+    const id = await save(null, row, req.file);
     stored = true;
     res.status(201).json(await readReport(id, true));
   } catch (error) {
@@ -407,8 +411,9 @@ async function change(req, res, next, mode) {
   let stored = false;
   try {
     const id = players.parseId(req.params.id);
-    const existing = await query('SELECT document_path FROM reports WHERE id = $1', [id]);
+    const existing = await query('SELECT document_path, author_id FROM reports WHERE id = $1', [id]);
     if (!existing.rowCount) throw http(404, 'NOT_FOUND', 'Отчёт не найден', [detail('id', 'Отчёт не существует')]);
+    auth.assertCanMutate(req.user, existing.rows[0].author_id);
     const parsed = parseBody(req.body, mode);
     if (parsed.value.playerId !== undefined && !(await players.playerExists(parsed.value.playerId))) {
       throw http(422, 'UNPROCESSABLE_ENTITY', 'Игрок не найден', [detail('playerId', 'Игрок не существует')]);
@@ -431,16 +436,19 @@ async function change(req, res, next, mode) {
   }
 }
 
-router.put('/:id', acceptFile, (req, res, next) => change(req, res, next, 'replace'));
-router.patch('/:id', acceptFile, (req, res, next) => change(req, res, next, 'patch'));
+router.put('/:id', auth.requireRole('scout', 'admin'), acceptFile, (req, res, next) => change(req, res, next, 'replace'));
+router.patch('/:id', auth.requireRole('scout', 'admin'), acceptFile, (req, res, next) => change(req, res, next, 'patch'));
 
-router.delete('/:id', async (req, res, next) => {
+router.delete('/:id', auth.requireRole('scout', 'admin'), async (req, res, next) => {
   try {
     const id = players.parseId(req.params.id);
+    const existing = await query('SELECT document_path, author_id FROM reports WHERE id = $1', [id]);
+    if (!existing.rowCount) throw http(404, 'NOT_FOUND', 'Отчёт не найден', [detail('id', 'Отчёт не существует')]);
+    auth.assertCanMutate(req.user, existing.rows[0].author_id);
     const removed = await query('DELETE FROM reports WHERE id = $1 RETURNING document_path', [id]);
     if (!removed.rowCount) throw http(404, 'NOT_FOUND', 'Отчёт не найден', [detail('id', 'Отчёт не существует')]);
     await unlinkStored(removed.rows[0].document_path);
-    res.json({ ok: true, id });
+    res.status(204).end();
   } catch (error) { next(error); }
 });
 
