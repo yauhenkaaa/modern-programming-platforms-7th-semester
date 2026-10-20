@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Го</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header>
+    <button type="button" class="brand" data-view="home">Го</button>
+    <nav>
+      <button type="button" data-view="lobby" class="nav-private">Комната</button>
+      <button type="button" data-view="game" class="nav-private" id="nav-game" hidden>Партия</button>
+      <button type="button" data-view="history" class="nav-private">История</button>
+      <button type="button" data-view="stats" class="nav-private">Статистика</button>
+      <button type="button" data-view="rules">Правила</button>
+    </nav>
+    <div class="account nav-private">
+      <span id="who"></span>
+      <button type="button" id="logout" class="btn ghost">Выйти</button>
+    </div>
+  </header>
+  <p id="net" hidden>Нет сети. После восстановления партия продолжится с того же хода.</p>
+  <main>
+    <section id="view-auth">
+      <article class="card narrow">
+        <h1>Одна доска на двоих</h1>
+        <p class="muted">Ходы приходят сразу. Партия, история и статистика сохраняются на сервере.</p>
+        <form id="auth-form">
+          <label>Имя
+            <input name="username" required minlength="3" maxlength="20" autocomplete="username" placeholder="например, masha">
+          </label>
+          <label>Пароль
+            <input name="password" type="password" required minlength="4" maxlength="72" autocomplete="current-password">
+          </label>
+          <button class="btn primary" type="submit">Войти</button>
+          <button class="btn ghost" type="button" id="auth-switch">Создать профиль</button>
+        </form>
+        <p id="auth-error" class="warn"></p>
+      </article>
+    </section>
+
+    <section id="view-lobby" hidden>
+      <div class="grid-2">
+        <article class="card">
+          <h1>Партия</h1>
+          <p class="muted">Случайный соперник ищется на поле того же размера. Коми белых — <span data-komi></span>.</p>
+          <div class="sizes" id="sizes">
+            <button type="button" data-act="size" data-size="9" class="on">9×9</button>
+            <button type="button" data-act="size" data-size="13">13×13</button>
+            <button type="button" data-act="size" data-size="19">19×19</button>
+          </div>
+          <button type="button" id="find" class="btn primary" data-act="find">Найти соперника</button>
+          <p id="queue-note" class="muted"></p>
+          <div id="resume-note"></div>
+        </article>
+        <article class="card">
+          <h2>Друзья</h2>
+          <form id="find-user">
+            <input id="user-query" placeholder="Имя игрока" maxlength="20" autocomplete="off">
+            <button class="btn" type="submit">Найти</button>
+          </form>
+          <div id="user-results"></div>
+          <div id="invites"></div>
+          <div id="friends"></div>
+        </article>
+      </div>
+    </section>
+
+    <section id="view-game" hidden>
+      <div class="game-layout">
+        <div>
+          <div class="board-frame"><canvas id="board"></canvas></div>
+          <p id="coord" class="muted"></p>
+        </div>
+        <aside id="panel" class="card"></aside>
+      </div>
+    </section>
+
+    <section id="view-history" hidden>
+      <h1>История</h1>
+      <div id="history-preview" class="card preview" hidden>
+        <h2 id="history-caption"></h2>
+        <p id="history-meta" class="muted"></p>
+        <div class="board-frame slim"><canvas id="history-board"></canvas></div>
+      </div>
+      <div id="history-list" class="card list"></div>
+    </section>
+
+    <section id="view-stats" hidden>
+      <h1>Статистика</h1>
+      <div id="stats" class="card"></div>
+    </section>
+
+    <section id="view-rules" hidden>
+      <article class="card prose">
+        <h1>Правила</h1>
+        <p>Игра идёт на сетке пересечений. В комнате есть поля 9×9, 13×13 и 19×19. Чёрные ходят первыми, дальше игроки чередуются. За ход ставится один камень на пустой пункт. Сдвинуть камень нельзя.</p>
+        <h2>Группы и захват</h2>
+        <p>Камни одного цвета, соединённые по стороне, образуют группу. Диагональ группу не соединяет. Пустой пункт рядом с группой — её дыхание. Если после хода у группы соперника не осталось дыханий, она снимается с доски.</p>
+        <p>Ход запрещён, если поставленный камень вместе со своей группой сразу остаётся без дыханий и при этом ничего не захвачено.</p>
+        <h2>Ко</h2>
+        <p>Нельзя ходом вернуть позицию, которая стояла на доске непосредственно перед последним ходом соперника. Поэтому только что взятый ко-камень нельзя отбить сразу: сначала сделайте ход в другом месте. Пас тоже меняет очередь и снимает этот запрет на следующий ответ.</p>
+        <h2>Подсчёт</h2>
+        <p>Два паса подряд останавливают выставление камней. Каждый отмечает мёртвые группы — те, которые соперник может снять, даже если сейчас у них ещё есть дыхания. Отмечается вся группа. Сервер завершит партию только если оба отметили одни и те же камни. Если разметка разошлась, подтверждения сбрасываются: игроки правят одну позицию и должны прийти к одному решению.</p>
+        <p>Счёт китайский, по площади. Очки — это свои живые камни плюс пустые пункты, которые соприкасаются только с камнями этого цвета. Белым добавляется коми <span data-komi></span>, поэтому ничьей не бывает. Нейтральные пункты между живыми группами обоих цветов, дамэ, не достаются никому. Снятые камни второй раз в счёт не входят: пункт, который они освободили, уже учтён.</p>
+        <h2>Связь и очередь</h2>
+        <p>Сдаться можно в любой момент. Если связь пропала, позиция не сбрасывается: она лежит на сервере, и после входа доска восстанавливается. Когда соперника нет больше минуты, второму игроку можно засчитать победу.</p>
+        <p>Если оба успели отправить ход по одной и той же версии доски, сервер примет только первый. Второй увидит отказ и уже новую позицию.</p>
+        <p>Случайный соперник берётся из очереди на тот же размер поля. Друга можно найти по имени, принять заявку и позвать в партию, пока он в сети.</p>
+      </article>
+    </section>
+  </main>
+  <p id="toast" hidden></p>
+  <noscript><p class="card">Для игры нужен JavaScript. Фреймворки не используются.</p></noscript>
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>
