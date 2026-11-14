@@ -1,0 +1,54 @@
+{
+  "name": "football-graphql-lab",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "ingest": "node src/ingest/index.js",
+    "dev:matches": "node --watch src/matches/index.js",
+    "dev:teams": "node --watch src/teams/index.js",
+    "dev:users": "node --watch src/users/index.js",
+    "dev:gateway": "node --watch src/gateway/index.js",
+    "dev:ingest": "node --watch src/ingest/index.js --cron",
+    "dev:web": "vite",
+    "dev": "concurrently -n matches,teams,users,gateway,ingest,web -c blue,green,yellow,magenta,red,cyan \"npm:dev:matches\" \"npm:dev:teams\" \"npm:dev:users\" \"npm:dev:gateway\" \"npm:dev:ingest\" \"npm:dev:web\"",
+    "start": "concurrently -n matches,teams,users,gateway \"node src/matches/index.js\" \"node src/teams/index.js\" \"node src/users/index.js\" \"node src/gateway/index.js\"",
+    "test": "node scripts/smoke.mjs"
+  },
+  "dependencies": {
+    "@apollo/gateway": "^2.14.4",
+    "@apollo/server": "^4.13.0",
+    "@apollo/subgraph": "^2.14.4",
+    "@faker-js/faker": "^10.6.0",
+    "@graphql-tools/schema": "^11.0.9",
+    "@opentelemetry/api": "^1.10.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.83.1",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.301.2",
+    "@opentelemetry/sdk-node": "^0.301.2",
+    "better-sqlite3": "^13.1.1",
+    "cors": "^2.8.6",
+    "csv-parse": "^7.0.3",
+    "dataloader": "^2.2.3",
+    "dotenv": "^17.2.3",
+    "express": "^4.22.3",
+    "graphql": "^16.15.0",
+    "graphql-depth-limit": "^1.1.0",
+    "graphql-query-complexity": "^2.0.0",
+    "graphql-tag": "^2.12.6",
+    "graphql-ws": "^6.4.2",
+    "lru-cache": "^11.5.3",
+    "node-cron": "^4.6.0",
+    "opossum": "^10.0.0",
+    "pino": "^10.4.0",
+    "prom-client": "^15.1.3",
+    "rate-limiter-flexible": "^11.4.1",
+    "ws": "^8.23.0"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.7",
+    "vite": "^8.3.8"
+  }
+}

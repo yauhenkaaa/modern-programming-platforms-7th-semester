@@ -1,0 +1,6 @@
+apiVersion: 1
+providers:
+  - name: football
+    type: file
+    options:
+      path: /var/lib/grafana/dashboards

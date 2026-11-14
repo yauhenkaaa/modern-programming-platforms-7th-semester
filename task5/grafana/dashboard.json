@@ -1,0 +1,31 @@
+{
+  "uid": "football",
+  "title": "Football GraphQL",
+  "schemaVersion": 39,
+  "timezone": "browser",
+  "refresh": "10s",
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Operations / sec",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [{ "refId": "A", "expr": "sum by (service) (rate(graphql_operations_total[1m]))" }]
+    },
+    {
+      "type": "timeseries",
+      "title": "Resolver p95",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [{ "refId": "A", "expr": "histogram_quantile(0.95, sum by (le, service) (rate(graphql_resolver_duration_seconds_bucket[1m])))" }]
+    },
+    {
+      "type": "stat",
+      "title": "APQ hits",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 8 },
+      "targets": [{ "refId": "A", "expr": "sum(graphql_apq_cache_total{result=\"hit\"})" }]
+    }
+  ]
+}
